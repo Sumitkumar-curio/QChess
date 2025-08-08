@@ -460,10 +460,15 @@ def measure_quantum_pieces(game: Game, positions: List[Tuple[int, int]]) -> Game
 
 # API Routes
 @api_router.post("/game", response_model=Game)
-async def create_game():
+async def create_game(request: Optional[GameCreateRequest] = None):
     """Create a new quantum chess game"""
     game = Game()
     game.board = create_initial_board()
+    
+    if request:
+        game.is_vs_ai = request.is_vs_ai
+        game.ai_color = request.ai_color
+        game.ai_difficulty = request.ai_difficulty
     
     await db.games.insert_one(game.dict())
     return game
