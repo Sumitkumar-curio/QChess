@@ -443,6 +443,26 @@ function App() {
     }
   };
 
+  const makeAiMove = async (gameId) => {
+    try {
+      setAiThinking(true);
+      setError('');
+      
+      const response = await axios.post(`${API}/game/${gameId}/ai_move`);
+      
+      if (response.data.success) {
+        setGame(response.data.game);
+        await fetchLegalMoves(response.data.game.id);
+      } else {
+        setError('AI move failed: ' + response.data.message);
+      }
+    } catch (err) {
+      setError('AI move failed: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setAiThinking(false);
+    }
+  };
+
   const makeMove = async (moveType) => {
     if (!selectedSquare || !targetSquare) return;
 
