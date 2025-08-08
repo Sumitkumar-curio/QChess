@@ -635,7 +635,8 @@ function App() {
               onClassicalMove={() => targetSquare && makeMove('classical')}
               onQuantumMove={() => targetSquare && makeMove('quantum')}
               onMeasure={measureQuantumPieces}
-              onNewGame={createNewGame}
+              onNewGame={() => setShowGameModeModal(true)}
+              aiThinking={aiThinking}
             />
             
             <MoveHistory moves={game.move_history} />
