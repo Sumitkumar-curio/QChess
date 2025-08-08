@@ -134,13 +134,147 @@ const ChessBoard = ({ game, onSquareClick, selectedSquare, legalMoves }) => {
   );
 };
 
+const GameModeModal = ({ isOpen, onClose, onCreateGame }) => {
+  const [gameMode, setGameMode] = useState('human');
+  const [playerColor, setPlayerColor] = useState('white');
+  const [aiDifficulty, setAiDifficulty] = useState('easy');
+
+  const handleCreateGame = () => {
+    const gameConfig = {
+      is_vs_ai: gameMode === 'ai',
+      ai_color: gameMode === 'ai' ? (playerColor === 'white' ? 'black' : 'white') : null,
+      ai_difficulty: gameMode === 'ai' ? aiDifficulty : null
+    };
+    onCreateGame(gameConfig);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="p-8 max-w-md w-full mx-4">
+        <h2 className="text-2xl font-bold text-center mb-6">New Quantum Chess Game</h2>
+        
+        <div className="space-y-6">
+          {/* Game Mode Selection */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Game Mode</h3>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="human"
+                  name="gameMode"
+                  value="human"
+                  checked={gameMode === 'human'}
+                  onChange={(e) => setGameMode(e.target.value)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="human" className="text-sm font-medium">Human vs Human</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="ai"
+                  name="gameMode"
+                  value="ai"
+                  checked={gameMode === 'ai'}
+                  onChange={(e) => setGameMode(e.target.value)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="ai" className="text-sm font-medium">Human vs Computer</label>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Settings */}
+          {gameMode === 'ai' && (
+            <>
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Play As</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="white"
+                      name="playerColor"
+                      value="white"
+                      checked={playerColor === 'white'}
+                      onChange={(e) => setPlayerColor(e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="white" className="text-sm font-medium">White (First Move)</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="black"
+                      name="playerColor"
+                      value="black"
+                      checked={playerColor === 'black'}
+                      onChange={(e) => setPlayerColor(e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="black" className="text-sm font-medium">Black (Second Move)</label>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">AI Difficulty</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="easy"
+                      name="aiDifficulty"
+                      value="easy"
+                      checked={aiDifficulty === 'easy'}
+                      onChange={(e) => setAiDifficulty(e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="easy" className="text-sm font-medium">Easy (Random Moves)</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="medium"
+                      name="aiDifficulty"
+                      value="medium"
+                      checked={aiDifficulty === 'medium'}
+                      onChange={(e) => setAiDifficulty(e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="medium" className="text-sm font-medium">Medium (Strategic)</label>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="flex space-x-3 pt-4">
+            <Button onClick={onClose} variant="outline" className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={handleCreateGame} className="flex-1">
+              Create Game
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 const GameControls = ({ 
   game, 
   selectedSquare, 
   onClassicalMove, 
   onQuantumMove, 
   onMeasure, 
-  onNewGame 
+  onNewGame,
+  aiThinking 
 }) => {
   const canMakeQuantumMove = () => {
     if (!selectedSquare) return false;
