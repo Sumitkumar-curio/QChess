@@ -332,7 +332,7 @@ const GameControls = ({
       <div className="space-y-2">
         <Button 
           onClick={onClassicalMove} 
-          disabled={!selectedSquare}
+          disabled={!selectedSquare || aiThinking || (game.is_vs_ai && game.current_player === game.ai_color)}
           className="w-full"
           variant="default"
         >
@@ -341,7 +341,7 @@ const GameControls = ({
         
         <Button 
           onClick={onQuantumMove} 
-          disabled={!selectedSquare || !canMakeQuantumMove()}
+          disabled={!selectedSquare || !canMakeQuantumMove() || aiThinking || (game.is_vs_ai && game.current_player === game.ai_color)}
           className="w-full"
           variant="outline"
         >
@@ -350,7 +350,7 @@ const GameControls = ({
         
         <Button 
           onClick={onMeasure} 
-          disabled={!hasQuantumPieces()}
+          disabled={!hasQuantumPieces() || aiThinking || (game.is_vs_ai && game.current_player === game.ai_color)}
           className="w-full"
           variant="secondary"
         >
