@@ -476,10 +476,16 @@ function App() {
         move_type: moveType
       });
       
-      setGame(response.data.game);
+      const updatedGame = response.data.game;
+      setGame(updatedGame);
       setSelectedSquare(null);
       setTargetSquare(null);
-      await fetchLegalMoves(response.data.game.id);
+      await fetchLegalMoves(updatedGame.id);
+      
+      // If it's AI's turn after player move, trigger AI move
+      if (updatedGame.is_vs_ai && updatedGame.current_player === updatedGame.ai_color) {
+        setTimeout(() => makeAiMove(updatedGame.id), 500); // Small delay for better UX
+      }
     } catch (err) {
       setError('Move failed: ' + (err.response?.data?.detail || err.message));
     } finally {
