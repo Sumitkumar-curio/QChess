@@ -531,6 +531,11 @@ function App() {
   };
 
   const handleSquareClick = async (row, col) => {
+    // Don't allow interactions during AI thinking or if it's AI's turn
+    if (aiThinking || (game.is_vs_ai && game.current_player === game.ai_color)) {
+      return;
+    }
+    
     if (!selectedSquare) {
       // Select a square with a piece of the current player
       const square = game.board[row][col];
