@@ -515,8 +515,14 @@ function App() {
         positions: quantumPositions
       });
       
-      setGame(response.data.game);
-      await fetchLegalMoves(response.data.game.id);
+      const updatedGame = response.data.game;
+      setGame(updatedGame);
+      await fetchLegalMoves(updatedGame.id);
+      
+      // If it's AI's turn after measurement, trigger AI move
+      if (updatedGame.is_vs_ai && updatedGame.current_player === updatedGame.ai_color) {
+        setTimeout(() => makeAiMove(updatedGame.id), 500); // Small delay for better UX
+      }
     } catch (err) {
       setError('Measurement failed: ' + (err.response?.data?.detail || err.message));
     } finally {
