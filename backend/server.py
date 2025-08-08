@@ -104,6 +104,11 @@ class MoveRequest(BaseModel):
 class MeasureRequest(BaseModel):
     positions: List[Tuple[int, int]]
 
+class GameCreateRequest(BaseModel):
+    is_vs_ai: bool = False
+    ai_color: Optional[PieceColor] = None
+    ai_difficulty: Optional[str] = None
+
 # Chess logic utilities
 def create_initial_board() -> List[List[Square]]:
     """Create the initial chess board setup"""
