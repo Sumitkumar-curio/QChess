@@ -295,14 +295,27 @@ const GameControls = ({
     <Card className="p-6 space-y-4 bg-gradient-to-br from-indigo-50 to-purple-50">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Quantum Chess</h2>
-        <div className="flex items-center justify-center space-x-2">
+        <div className="flex items-center justify-center space-x-2 mb-2">
           <Badge variant={game.current_player === 'white' ? 'default' : 'secondary'}>
             Current Player: {game.current_player.charAt(0).toUpperCase() + game.current_player.slice(1)}
+            {game.is_vs_ai && game.current_player === game.ai_color && ' (AI)'}
           </Badge>
           <Badge variant={game.status === 'active' ? 'default' : 'destructive'}>
             Status: {game.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
           </Badge>
         </div>
+        {game.is_vs_ai && (
+          <div className="text-sm text-gray-600">
+            Playing vs AI ({game.ai_difficulty}) • You are {game.ai_color === 'white' ? 'Black' : 'White'}
+          </div>
+        )}
+        {aiThinking && (
+          <div className="flex items-center justify-center space-x-2 text-blue-600 animate-pulse">
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+            <span className="text-sm font-medium">AI is thinking...</span>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-sm">
