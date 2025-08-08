@@ -407,8 +407,10 @@ function App() {
   const [legalMoves, setLegalMoves] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showGameModeModal, setShowGameModeModal] = useState(false);
+  const [aiThinking, setAiThinking] = useState(false);
 
-  const createNewGame = async () => {
+  const createNewGame = async (gameConfig = {}) => {
     try {
       setLoading(true);
       setError('');
