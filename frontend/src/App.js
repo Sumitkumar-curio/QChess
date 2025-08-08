@@ -414,11 +414,19 @@ function App() {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.post(`${API}/game`);
-      setGame(response.data);
+      setAiThinking(false);
+      
+      const response = await axios.post(`${API}/game`, gameConfig);
+      const newGame = response.data;
+      setGame(newGame);
       setSelectedSquare(null);
       setTargetSquare(null);
       setLegalMoves([]);
+      
+      // If AI is white, make AI's first move
+      if (newGame.is_vs_ai && newGame.ai_color === 'white') {
+        setTimeout(() => makeAiMove(newGame.id), 1000); // Small delay for better UX
+      }
     } catch (err) {
       setError('Failed to create new game: ' + err.message);
     } finally {
