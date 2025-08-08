@@ -618,6 +618,114 @@ async def get_game_legal_moves(game_id: str):
     
     return {"legal_moves": legal_moves, "current_player": game.current_player}
 
+@api_router.post("/game/{game_id}/ai_move")
+async def make_ai_move(game_id: str):
+    """Generate and execute an AI move"""
+    game_doc = await db.games.find_one({"id": game_id})
+    if not game_doc:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    game = Game(**game_doc)
+    
+    if not game.is_vs_ai:
+        raise HTTPException(status_code=400, detail="Game is not vs AI")
+    
+    if game.current_player != game.ai_color:
+        raise HTTPException(status_code=400, detail="Not AI's turn")
+    
+    # Check if game is already over
+    if game.status in [GameStatus.CHECKMATE_WHITE, GameStatus.CHECKMATE_BLACK, GameStatus.STALEMATE]:
+        return {"success": False, "message": "Game is already over", "game": game}
+    
+    # Get AI move
+    ai_move = get_ai_move(game)
+    if not ai_move:
+        return {"success": False, "message": "No legal moves available", "game": game}
+    
+    # Execute the AI move using existing logic
+    from_row, from_col = ai_move["from_pos"]
+    to_row, to_col = ai_move["to_pos"]
+    move_type = ai_move["move_type"]
+    
+    from_square = game.board[from_row][from_col]
+    to_square = game.board[to_row][to_col]
+    piece = from_square.classical_piece
+    
+    if not piece:
+        raise HTTPException(status_code=500, detail="AI selected invalid move")
+    
+    # Execute the move
+    if move_type == "classical":
+        from_square.classical_piece = None
+        to_square.classical_piece = piece
+        
+    elif move_type == "quantum":
+        # Create quantum superposition
+        quantum_id = str(uuid.uuid4())
+        quantum_piece_1 = QuantumPiece(
+            piece_type=piece.piece_type,
+            color=piece.color,
+            probability=0.5,
+            quantum_id=quantum_id
+        )
+        quantum_piece_2 = QuantumPiece(
+            piece_type=piece.piece_type,
+            color=piece.color,
+            probability=0.5,
+            quantum_id=quantum_id
+        )
+        
+        from_square.classical_piece = None
+        from_square.quantum_pieces.append(quantum_piece_1)
+        to_square.quantum_pieces.append(quantum_piece_2)
+        
+        # Update superposition count
+        if game.current_player == PieceColor.WHITE:
+            game.white_superpositions += 1
+        else:
+            game.black_superpositions += 1
+    
+    # Record the move
+    move = Move(
+        from_pos=ai_move["from_pos"],
+        to_pos=ai_move["to_pos"],
+        move_type=MoveType(move_type),
+        piece_type=piece.piece_type,
+        color=piece.color
+    )
+    game.move_history.append(move)
+    
+    # Check for game status updates
+    opponent_color = PieceColor.BLACK if game.current_player == PieceColor.WHITE else PieceColor.WHITE
+    
+    if is_in_check(game.board, opponent_color):
+        game.status = GameStatus.CHECK_BLACK if opponent_color == PieceColor.BLACK else GameStatus.CHECK_WHITE
+        
+        # Check for checkmate
+        legal_moves = get_legal_moves(game.board, opponent_color)
+        if not legal_moves:
+            game.status = GameStatus.CHECKMATE_BLACK if opponent_color == PieceColor.BLACK else GameStatus.CHECKMATE_WHITE
+    else:
+        game.status = GameStatus.ACTIVE
+    
+    # Switch turns
+    game.current_player = opponent_color
+    
+    # Update database
+    await db.games.replace_one({"id": game_id}, game.dict())
+    
+    return {
+        "success": True, 
+        "game": game, 
+        "ai_move": {
+            "from_pos": ai_move["from_pos"],
+            "to_pos": ai_move["to_pos"],
+            "move_type": move_type,
+            "piece_type": piece.piece_type.value,
+            "color": piece.color.value
+        }
+    }
+
 # Health check
 @api_router.get("/")
 async def root():
