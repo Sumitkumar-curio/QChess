@@ -556,7 +556,7 @@ function App() {
   };
 
   useEffect(() => {
-    createNewGame();
+    setShowGameModeModal(true);
   }, []);
 
   useEffect(() => {
