@@ -90,6 +90,9 @@ class Game(BaseModel):
     status: GameStatus = GameStatus.ACTIVE
     white_superpositions: int = 0
     black_superpositions: int = 0
+    is_vs_ai: bool = False
+    ai_color: Optional[PieceColor] = None
+    ai_difficulty: Optional[str] = None  # "easy" or "medium"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class MoveRequest(BaseModel):
