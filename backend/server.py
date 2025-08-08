@@ -254,6 +254,175 @@ def get_legal_moves(board: List[List[Square]], color: PieceColor) -> List[Tuple[
     
     return legal_moves
 
+def evaluate_board_position(board: List[List[Square]], color: PieceColor) -> int:
+    """Simple board evaluation for AI"""
+    score = 0
+    piece_values = {
+        PieceType.PAWN: 1,
+        PieceType.KNIGHT: 3,
+        PieceType.BISHOP: 3,
+        PieceType.ROOK: 5,
+        PieceType.QUEEN: 9,
+        PieceType.KING: 1000
+    }
+    
+    for row in range(8):
+        for col in range(8):
+            piece = board[row][col].classical_piece
+            if piece:
+                value = piece_values.get(piece.piece_type, 0)
+                if piece.color == color:
+                    score += value
+                else:
+                    score -= value
+    
+    return score
+
+def score_move(game: Game, from_pos: Tuple[int, int], to_pos: Tuple[int, int], move_type: str) -> float:
+    """Score a potential move for AI"""
+    from_row, from_col = from_pos
+    to_row, to_col = to_pos
+    
+    # Create test game state
+    test_game = copy.deepcopy(game)
+    piece = test_game.board[from_row][from_col].classical_piece
+    if not piece:
+        return -1000
+    
+    score = 0
+    
+    # Basic move scoring
+    target_piece = test_game.board[to_row][to_col].classical_piece
+    if target_piece and target_piece.color != piece.color:
+        score += 3  # Capture bonus
+    
+    # Pawn advancement bonus
+    if piece.piece_type == PieceType.PAWN:
+        direction = -1 if piece.color == PieceColor.WHITE else 1
+        if (to_row - from_row) * direction > 0:
+            score += 1
+    
+    # Simulate the move
+    if move_type == "classical":
+        test_game.board[from_row][from_col].classical_piece = None
+        test_game.board[to_row][to_col].classical_piece = piece
+        
+        # Check if this leaves king in check (heavily penalize)
+        if is_in_check(test_game.board, piece.color):
+            score -= 100
+            
+    elif move_type == "quantum":
+        # For quantum moves, simulate multiple collapses
+        collapse_scores = []
+        
+        for _ in range(5):  # Simulate 5 random collapses
+            sim_game = copy.deepcopy(test_game)
+            
+            # Create quantum superposition
+            quantum_id = str(uuid.uuid4())
+            quantum_piece_1 = QuantumPiece(
+                piece_type=piece.piece_type,
+                color=piece.color,
+                probability=0.5,
+                quantum_id=quantum_id
+            )
+            quantum_piece_2 = QuantumPiece(
+                piece_type=piece.piece_type,
+                color=piece.color,
+                probability=0.5,
+                quantum_id=quantum_id
+            )
+            
+            sim_game.board[from_row][from_col].classical_piece = None
+            sim_game.board[from_row][from_col].quantum_pieces.append(quantum_piece_1)
+            sim_game.board[to_row][to_col].quantum_pieces.append(quantum_piece_2)
+            
+            # Randomly collapse to one position
+            import random
+            if random.random() < 0.5:
+                # Collapse to original position
+                sim_game.board[from_row][from_col].quantum_pieces = []
+                sim_game.board[from_row][from_col].classical_piece = piece
+                sim_game.board[to_row][to_col].quantum_pieces = []
+            else:
+                # Collapse to new position
+                sim_game.board[from_row][from_col].quantum_pieces = []
+                sim_game.board[to_row][to_col].quantum_pieces = []
+                sim_game.board[to_row][to_col].classical_piece = piece
+            
+            # Evaluate this collapsed state
+            board_score = evaluate_board_position(sim_game.board, piece.color)
+            collapse_scores.append(board_score)
+        
+        # Average the collapse scores
+        score += sum(collapse_scores) / len(collapse_scores) / 100  # Scale down
+    
+    return score
+
+def get_ai_move(game: Game) -> Optional[Dict]:
+    """Generate AI move based on difficulty"""
+    if not game.is_vs_ai or game.current_player != game.ai_color:
+        return None
+    
+    # Get all legal moves
+    legal_moves = get_legal_moves(game.board, game.current_player)
+    if not legal_moves:
+        return None
+    
+    # Check if quantum moves are available
+    max_superpositions = 1
+    current_superpositions = game.white_superpositions if game.current_player == PieceColor.WHITE else game.black_superpositions
+    can_make_quantum = current_superpositions < max_superpositions
+    
+    # Generate all possible moves (classical and quantum)
+    possible_moves = []
+    
+    # Add classical moves
+    for from_pos, to_pos in legal_moves:
+        possible_moves.append({
+            "from_pos": from_pos,
+            "to_pos": to_pos,
+            "move_type": "classical"
+        })
+    
+    # Add quantum moves if available
+    if can_make_quantum:
+        for from_pos, to_pos in legal_moves:
+            to_row, to_col = to_pos
+            # Only quantum move to empty squares
+            if game.board[to_row][to_col].is_empty():
+                possible_moves.append({
+                    "from_pos": from_pos,
+                    "to_pos": to_pos,
+                    "move_type": "quantum"
+                })
+    
+    if not possible_moves:
+        return None
+    
+    # Select move based on difficulty
+    if game.ai_difficulty == "easy":
+        # Random move
+        import random
+        return random.choice(possible_moves)
+    
+    elif game.ai_difficulty == "medium":
+        # Score-based move selection
+        best_move = None
+        best_score = float('-inf')
+        
+        for move in possible_moves:
+            score = score_move(game, move["from_pos"], move["to_pos"], move["move_type"])
+            if score > best_score:
+                best_score = score
+                best_move = move
+        
+        return best_move
+    
+    # Fallback to random
+    import random
+    return random.choice(possible_moves)
+
 def measure_quantum_pieces(game: Game, positions: List[Tuple[int, int]]) -> Game:
     """Measure and collapse quantum pieces at given positions"""
     import random
